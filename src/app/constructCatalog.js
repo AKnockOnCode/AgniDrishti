@@ -10,7 +10,7 @@ const SOURCE_METHODS = Object.freeze({
   firms: ['getSnapshot'],
   wind: ['getSnapshot'],
   weather: ['getSnapshot'],
-  installations: ['getMappedSites', 'searchNearby']
+  installations: ['getMappedSites', 'searchNearby'],
 });
 
 /** Construct the current catalog without choosing any source provider. */

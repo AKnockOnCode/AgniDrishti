@@ -128,16 +128,20 @@ export function createModel({
    * @returns {{name: string, color: Cesium.Color}}
    */
 
-  
   function detectionColorStop(fire) {
     if (fire.ml_class) {
-       switch(fire.ml_class) {
-           case 'blast': return { name: 'magenta', color: Cesium.Color.MAGENTA };
-           case 'persistent': return { name: 'purple', color: Cesium.Color.PURPLE };
-           case 'flare': return { name: 'cyan', color: Cesium.Color.CYAN };
-           case 'wildfire': return { name: 'orange', color: Cesium.Color.ORANGE };
-           case 'agri': return { name: 'yellow', color: Cesium.Color.YELLOW };
-       }
+      switch (fire.ml_class) {
+        case 'blast':
+          return { name: 'magenta', color: Cesium.Color.MAGENTA };
+        case 'persistent':
+          return { name: 'purple', color: Cesium.Color.PURPLE };
+        case 'flare':
+          return { name: 'cyan', color: Cesium.Color.CYAN };
+        case 'wildfire':
+          return { name: 'orange', color: Cesium.Color.ORANGE };
+        case 'agri':
+          return { name: 'yellow', color: Cesium.Color.YELLOW };
+      }
     }
     const heat = Math.min(
       1,
@@ -148,11 +152,13 @@ export function createModel({
     return DETECTION_COLOR_STOPS[2];
   }
 
-
   /** FRP → core marker pixel size, clamped to 8..28px. */
 
   function frpPixelSize(frp) {
-    return Math.max(5, Math.min(18, Math.round(5 + Math.sqrt(Math.max(0, frp)) * 1.5)));
+    return Math.max(
+      5,
+      Math.min(18, Math.round(5 + Math.sqrt(Math.max(0, frp)) * 1.5)),
+    );
   }
 
   /** Quantize a core size to a 2px bucket so the sprite cache stays tiny. */

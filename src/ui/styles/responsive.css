@@ -133,10 +133,6 @@
     width: 260px;
   }
 
-  
-
-  
-
   /* Narrow viewports: cap the preview height to keep the panel compact. Cap
      the IMAGE, not the wrap — the wrap is overflow:hidden, so capping it would
      re-crop the very timestamp this is protecting. object-fit: contain then

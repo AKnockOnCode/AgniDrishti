@@ -9,7 +9,10 @@ let _kdTree = null;
 function getIndustryTree() {
   if (_kdTree) return _kdTree;
   try {
-    const txt = fs.readFileSync(path.join(process.cwd(), 'industrydataosm.csv'), 'utf8');
+    const txt = fs.readFileSync(
+      path.join(process.cwd(), 'industrydataosm.csv'),
+      'utf8',
+    );
     const lines = txt.split('\n');
     let count = 0;
     for (let i = 1; i < lines.length; i++) {
@@ -17,15 +20,15 @@ function getIndustryTree() {
     }
     _kdTree = new KDBush(count);
     for (let i = 1; i < lines.length; i++) {
-      
       const parts = lines[i].split('\t');
       if (parts.length >= 2) {
-         _kdTree.add(parseFloat(parts[1]), parseFloat(parts[0])); // lon, lat
+        _kdTree.add(parseFloat(parts[1]), parseFloat(parts[0])); // lon, lat
       }
     }
 
     _kdTree.finish();
-  } catch(e) { console.error("KDBUSH ERROR:", e);
+  } catch (e) {
+    console.error('KDBUSH ERROR:', e);
     _kdTree = new KDBush(0);
     _kdTree.finish();
   }
@@ -40,91 +43,99 @@ let _persistentHotspots = null;
 function getPersistentHotspots() {
   if (_persistentHotspots) return _persistentHotspots;
   try {
-    const raw = fs.readFileSync(path.join(process.cwd(), 'persistent_hotspots.json'), 'utf8');
+    const raw = fs.readFileSync(
+      path.join(process.cwd(), 'persistent_hotspots.json'),
+      'utf8',
+    );
     _persistentHotspots = JSON.parse(raw);
-    console.log('[FIRMS] Archive hotspots loaded:', Object.keys(_persistentHotspots).length);
-  } catch(e) {
-    console.error('[FIRMS] Could not load persistent_hotspots.json:', e.message);
+    console.log(
+      '[FIRMS] Archive hotspots loaded:',
+      Object.keys(_persistentHotspots).length,
+    );
+  } catch (e) {
+    console.error(
+      '[FIRMS] Could not load persistent_hotspots.json:',
+      e.message,
+    );
     _persistentHotspots = {};
   }
   return _persistentHotspots;
 }
 
 function classifyFire(lon, lat, frp, bright) {
-   lon = parseFloat(lon);
-   lat = parseFloat(lat);
-   frp = parseFloat(frp);
-   bright = parseFloat(bright);
+  lon = parseFloat(lon);
+  lat = parseFloat(lat);
+  frp = parseFloat(frp);
+  bright = parseFloat(bright);
 
-   // STEP 1: EXTREME FRP = BLAST / INDUSTRIAL ACCIDENT (global)
-   if (frp > 500) return 'blast';
+  // STEP 1: EXTREME FRP = BLAST / INDUSTRIAL ACCIDENT (global)
+  if (frp > 500) return 'blast';
 
-   // We only have OSM industry data and 6-month archive for India.
-   // Applying those to Africa/SE Asia would wrongly turn seasonal
-   // agricultural burns purple. Keep India logic fully separate.
-   const isIndia = lat >= 8 && lat <= 37 && lon >= 68 && lon <= 98;
+  // We only have OSM industry data and 6-month archive for India.
+  // Applying those to Africa/SE Asia would wrongly turn seasonal
+  // agricultural burns purple. Keep India logic fully separate.
+  const isIndia = lat >= 8 && lat <= 37 && lon >= 68 && lon <= 98;
 
-   if (isIndia) {
-     const hotspots = getPersistentHotspots();
-     const GRID = 0.1;
-     const latCell = (Math.round(lat / GRID) * GRID).toFixed(1);
-     const lonCell = (Math.round(lon / GRID) * GRID).toFixed(1);
-     const monthsActive = hotspots[`${latCell}:${lonCell}`] || 0;
+  if (isIndia) {
+    const hotspots = getPersistentHotspots();
+    const GRID = 0.1;
+    const latCell = (Math.round(lat / GRID) * GRID).toFixed(1);
+    const lonCell = (Math.round(lon / GRID) * GRID).toFixed(1);
+    const monthsActive = hotspots[`${latCell}:${lonCell}`] || 0;
 
-     // 5+ months active = fires nearly every month year-round.
-     // India's two crop cycles (Oct-Nov paddy, Apr-May wheat) produce at most
-     // 2 months of recurring agricultural fires in the same location.
-     // 5 months = permanent industrial / thermal source, not seasonal crops.
-     if (monthsActive >= 5) {
-       if (bright > 350) return 'flare';
-       return 'persistent';
-     }
+    // 5+ months active = fires nearly every month year-round.
+    // India's two crop cycles (Oct-Nov paddy, Apr-May wheat) produce at most
+    // 2 months of recurring agricultural fires in the same location.
+    // 5 months = permanent industrial / thermal source, not seasonal crops.
+    if (monthsActive >= 5) {
+      if (bright > 350) return 'flare';
+      return 'persistent';
+    }
 
-     // OSM INDUSTRY: Tightened from 2km to 500m (~0.0045 degrees).
-     // Factory centroid points represent the building/stack, not a 2km zone.
-     // 500m avoids false-alarming on open fields adjacent to factories.
-     const tree = getIndustryTree();
-     const nearFactory500m = tree.within(lon, lat, 0.0045).length > 0;
+    // OSM INDUSTRY: Tightened from 2km to 500m (~0.0045 degrees).
+    // Factory centroid points represent the building/stack, not a 2km zone.
+    // 500m avoids false-alarming on open fields adjacent to factories.
+    const tree = getIndustryTree();
+    const nearFactory500m = tree.within(lon, lat, 0.0045).length > 0;
 
-     // Near known factory AND seen in archive on 2+ separate months = confirmed
-     if (nearFactory500m && monthsActive >= 2) return 'persistent';
+    // Near known factory AND seen in archive on 2+ separate months = confirmed
+    if (nearFactory500m && monthsActive >= 2) return 'persistent';
 
-     // Very hot near a factory = gas flare or brick kiln stack
-     // (Punjab brick kilns regularly reach 360-400K brightness)
-     if (nearFactory500m && bright > 340) return 'flare';
+    // Very hot near a factory = gas flare or brick kiln stack
+    // (Punjab brick kilns regularly reach 360-400K brightness)
+    if (nearFactory500m && bright > 340) return 'flare';
 
-     // 4 months is more than two crop cycles — industrial.
-     if (monthsActive >= 4) {
-       if (bright > 340) return 'flare';
-       return 'persistent';
-     }
+    // 4 months is more than two crop cycles — industrial.
+    if (monthsActive >= 4) {
+      if (bright > 340) return 'flare';
+      return 'persistent';
+    }
 
-     // OFFSHORE INDIA: Bombay High (Arabian Sea) and KG Basin (Bay of Bengal)
-     const isOffshoreIndia =
-       (lon >= 70 && lon <= 73 && lat >= 18.5 && lat <= 21.5) ||
-       (lon >= 80 && lon <= 82 && lat >= 15 && lat <= 17.5);
-     if (isOffshoreIndia) return 'persistent';
+    // OFFSHORE INDIA: Bombay High (Arabian Sea) and KG Basin (Bay of Bengal)
+    const isOffshoreIndia =
+      (lon >= 70 && lon <= 73 && lat >= 18.5 && lat <= 21.5) ||
+      (lon >= 80 && lon <= 82 && lat >= 15 && lat <= 17.5);
+    if (isOffshoreIndia) return 'persistent';
 
-     // WILDFIRE (India): Not near any industry within 2km, brand-new location
-     // (never in archive), moderate FRP. Real wildfires in Uttarakhand,
-     // Himachal, Odisha, Chhattisgarh forests.
-     const nearIndustry2k = tree.within(lon, lat, 0.018).length > 0;
-     if (!nearIndustry2k && monthsActive === 0 && frp > 8) return 'wildfire';
+    // WILDFIRE (India): Not near any industry within 2km, brand-new location
+    // (never in archive), moderate FRP. Real wildfires in Uttarakhand,
+    // Himachal, Odisha, Chhattisgarh forests.
+    const nearIndustry2k = tree.within(lon, lat, 0.018).length > 0;
+    if (!nearIndustry2k && monthsActive === 0 && frp > 8) return 'wildfire';
 
-     return 'agri';
-   }
+    return 'agri';
+  }
 
-   // NON-INDIA (Africa, SE Asia, Middle East, Europe, Americas)
-   // No industry or archive data for these regions. Physics-only heuristics:
-   // brightness and FRP reveal the fire's nature.
-   // Africa: mostly seasonal controlled agricultural burns (low FRP, low brightness).
-   // Nigeria/Middle East oil fields: extremely bright + high FRP gas flares.
+  // NON-INDIA (Africa, SE Asia, Middle East, Europe, Americas)
+  // No industry or archive data for these regions. Physics-only heuristics:
+  // brightness and FRP reveal the fire's nature.
+  // Africa: mostly seasonal controlled agricultural burns (low FRP, low brightness).
+  // Nigeria/Middle East oil fields: extremely bright + high FRP gas flares.
 
-   if (bright > 420 && frp > 80) return 'flare';   // Oil field gas flare
-   if (frp > 25) return 'wildfire';                 // Intense open fire (savannah, forest)
-   return 'agri';                                    // Default: agricultural/controlled burn
+  if (bright > 420 && frp > 80) return 'flare'; // Oil field gas flare
+  if (frp > 25) return 'wildfire'; // Intense open fire (savannah, forest)
+  return 'agri'; // Default: agricultural/controlled burn
 }
-
 
 /**
  * NASA FIRMS live active-fire proxy with a memory + disk cache.
@@ -224,7 +235,12 @@ export function firmsProxy() {
         // and a world/2 VIIRS pull exceeds V8's argument limit (~125k) at
         // ~131k records — RangeError, and the whole source is silently dropped.
         for (const record of records) {
-          record.ml_class = classifyFire(record.lon, record.lat, record.frp, record.brightness);
+          record.ml_class = classifyFire(
+            record.lon,
+            record.lat,
+            record.frp,
+            record.brightness,
+          );
           fires.push(record);
         }
         sources.push({ source, count: records.length, ok: true });

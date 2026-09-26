@@ -147,11 +147,14 @@ export function createRendering({
       const normalized = Math.min(1, Math.sqrt(score / maxScore));
       const alpha = 0.16 + normalized * 0.5;
       let color = components.model.heatColor(normalized, alpha);
-      
+
       if (cell.ml_classes) {
-         if (cell.ml_classes.has('blast')) color = Cesium.Color.MAGENTA.withAlpha(alpha + 0.2);
-         else if (cell.ml_classes.has('persistent')) color = Cesium.Color.PURPLE.withAlpha(alpha + 0.2);
-         else if (cell.ml_classes.has('flare')) color = Cesium.Color.CYAN.withAlpha(alpha + 0.2);
+        if (cell.ml_classes.has('blast'))
+          color = Cesium.Color.MAGENTA.withAlpha(alpha + 0.2);
+        else if (cell.ml_classes.has('persistent'))
+          color = Cesium.Color.PURPLE.withAlpha(alpha + 0.2);
+        else if (cell.ml_classes.has('flare'))
+          color = Cesium.Color.CYAN.withAlpha(alpha + 0.2);
       }
       const centerLon = cell.lonCell + lod.gridDegrees / 2;
       const centerLat = cell.latCell + lod.gridDegrees / 2;
