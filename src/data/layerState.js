@@ -372,15 +372,7 @@ const OPTION_GROUPS = Object.freeze({
     }),
     integerOption('selectedSatTrackingId', 't', null),
   ]),
-  cctv: Object.freeze([
-    enumOption('coverageMode', 'c', 'on', ['off', 'on', 'viewshed'], {
-      off: '0',
-      on: '1',
-      viewshed: 'v',
-    }),
-    booleanOption('showProjection', 'p', true),
-    booleanOption('autoHop', 'a', false),
-  ]),
+
   'recent-imagery': Object.freeze([
     // Box edges in degrees × 100000; latitudes stop at the Web-Mercator limit.
     boundedIntegerOption('west', 'w', null, { min: -18000000, max: 18000000 }),
@@ -592,27 +584,7 @@ export function normalizeLayerState(candidate) {
       normalizeOwnerOptions(ownerId, input.options?.[ownerId]),
     ]),
   );
-  // A selected entity cannot outlive an explicitly disabled owner layer.
-  // Keeping these IDs would resurrect tracking when that layer is enabled
-  // later, even though OFF was newer explicit intent.
-  if (!enabled.has('flights')) options.flights.selectedFlightsTrackingId = null;
-  if (!enabled.has('military'))
-    options.flights.selectedMilitaryTrackingId = null;
-  if (!enabled.has('satellites'))
-    options.satellites.selectedSatTrackingId = null;
-  // The codec has no cross-family recency field, so multiple tracking IDs are
-  // ambiguous rather than an ordered handoff. Fail closed instead of letting
-  // asynchronous feed arrival decide which tracker and camera owner wins.
-  const trackingSelectionCount = [
-    options.flights.selectedFlightsTrackingId,
-    options.flights.selectedMilitaryTrackingId,
-    options.satellites.selectedSatTrackingId,
-  ].filter((value) => value !== null).length;
-  if (trackingSelectionCount > 1) {
-    options.flights.selectedFlightsTrackingId = null;
-    options.flights.selectedMilitaryTrackingId = null;
-    options.satellites.selectedSatTrackingId = null;
-  }
+  
   return {
     version: LAYER_STATE_VERSION,
     enabledLayerIds,

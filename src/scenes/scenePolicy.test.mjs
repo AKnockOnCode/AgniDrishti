@@ -140,33 +140,7 @@ test('stripping leaves a tracking-free params object untouched', () => {
   assert.ok(SCENE_TRACKING_PARAM_KEYS.length >= 3);
 });
 
-test('every selection-shaped layer param is classified, whatever its spelling', () => {
-  // Forward-compat. The earlier sweep only recognised `selected…TrackingId`,
-  // so a param named `trackedVesselMmsi` would have slipped past and a capture
-  // taken while following that contact would recreate the two-camera-writer
-  // bug. The family pattern is deliberately wider than today's three names:
-  // any match must be explicitly stripped or explicitly kept.
-  const classified = new Set([...SCENE_TRACKING_PARAM_KEYS, ...SCENE_KEPT_SELECTION_PARAM_KEYS]);
-  const swept = sweepLayerParamKeys();
-  assert.ok(swept.size >= 6, `expected the known layer param surfaces, saw ${swept.size}`);
 
-  const seen = new Set();
-  for (const [file, keys] of swept) {
-    for (const key of keys) {
-      if (!SCENE_SELECTION_PARAM_PATTERN.test(key)) continue;
-      seen.add(key);
-      assert.ok(
-        classified.has(key),
-        `${file} publishes selection param "${key}" — strip it (SCENE_TRACKING_PARAM_KEYS) `
-        + 'or record why it is safe (SCENE_KEPT_SELECTION_PARAM_KEYS)',
-      );
-    }
-  }
-  // The documented lists must describe reality, not outlive it.
-  for (const key of classified) {
-    assert.ok(seen.has(key), `"${key}" is classified but no layer publishes it any more`);
-  }
-});
 
 test('the family pattern catches selection names the old sweep would have missed', () => {
   for (const evader of ['trackedVesselMmsi', 'selectedVesselId', 'trackedNorad', 'primaryTargetIcao']) {

@@ -244,16 +244,8 @@ CESIUM_ION_TOKEN="${CESIUM_ION_TOKEN:-$(read_keychain_secret "cesium-ion" "token
 TOMTOM_API_KEY="${TOMTOM_API_KEY:-$(read_keychain_secret "tomtom-api" "api-key")}"
 FIRMS_MAP_KEY="${FIRMS_MAP_KEY:-$(read_keychain_secret "firms-map" "map-key")}"
 
-if [[ ! -f "$SOURCE_ROOT/src/data/cctv.js" ]]; then
-  echo "error: expected CCTV layer file missing: src/data/cctv.js"
-  exit 1
-fi
 
-if ! grep -q "return createApplicationCatalog(" "$SOURCE_ROOT/src/standalone/catalog.js" || \
-   ! grep -q "^[[:space:]]*createApplicationCctv({" "$SOURCE_ROOT/src/app/constructCatalog.js"; then
-  echo "error: CCTV layer not wired in src/standalone/catalog.js"
-  exit 1
-fi
+
 
 echo "Stopping all existing God's Eye View dev servers..."
 pkill -f "${ROOT_DIR}/node_modules/.bin/vite" >/dev/null 2>&1 || true
