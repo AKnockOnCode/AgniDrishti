@@ -584,7 +584,7 @@ export function normalizeLayerState(candidate) {
       normalizeOwnerOptions(ownerId, input.options?.[ownerId]),
     ]),
   );
-  
+
   return {
     version: LAYER_STATE_VERSION,
     enabledLayerIds,
