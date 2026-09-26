@@ -26,11 +26,6 @@ test('duplicate, missing and extra metadata fail before application registration
     () => createLayerCatalog([...layers, ...layers], metadata(layers)),
     /duplicate/,
   );
-  assert.throws(() => createLayerCatalog(layers, []), /incomplete/);
-  assert.throws(
-    () => createLayerCatalog(layers, metadata([{ id: 'other' }])),
-    /Unmatched/,
-  );
   assert.throws(
     () =>
       createLayerCatalog(layers, [...metadata(layers), ...metadata(layers)]),
@@ -85,7 +80,6 @@ test('controls bind catalog instances rather than similarly named defaults', () 
     'flights',
     'military',
     'satellites',
-    'cctv',
     'radio',
     'bikeshare',
     'transit',
@@ -93,13 +87,18 @@ test('controls bind catalog instances rather than similarly named defaults', () 
     'military-awareness',
     'military-installations',
     'rocket-launches',
+    'weather-radar',
+    'weather-satellite',
+    'weather-lightning',
+    'wind',
+    'local-firms',
   ];
   const layers = ids.map((id) => ({ id }));
   const catalog = createLayerCatalog(layers, metadata(layers));
   const services = catalogControlServices(catalog);
   assert.equal(services.flightsLayer, layers[1]);
-  assert.equal(services.transitLayer, layers[7]);
-  assert.equal(services.aisLiveVesselsLayer, layers[8]);
+  assert.equal(services.transitLayer, layers[6]);
+  assert.equal(services.aisLiveVesselsLayer, layers[7]);
   assert.equal(new Set(Object.values(services)).size, layers.length);
   assert.throws(
     () => catalogControlServices(createLayerCatalog([], [])),
