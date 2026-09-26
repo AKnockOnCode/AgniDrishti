@@ -1,0 +1,149 @@
+  <div id="cesiumContainer"></div>
+  <div id="world-overlay-root" aria-hidden="true">
+    <canvas id="world-overlay-canvas"></canvas>
+  </div>
+  <div id="world-overlay-actions" class="world-overlay-accessibility" role="region" aria-label="Visible map targets">
+    <div id="world-overlay-action-list"></div>
+    <div id="world-overlay-status" role="status" aria-live="polite" aria-atomic="true"></div>
+  </div>
+
+  <!-- Title -->
+  <div id="title-bar">
+    <div class="title-glow"></div>
+    <h1><span class="title-logo brand-logo" data-logo-gaze data-logo-src="/logo.svg" aria-hidden="true"><img src="/logo.svg" alt="" /></span> <span>Agni<span class="title-accent">Drishti</span></span></h1>
+    <p class="subtitle">NO PLACE LEFT BEHIND</p>
+  </div>
+
+  <!-- Style indicator -->
+  <div id="style-indicator">
+    <span class="indicator-label">ACTIVE STYLE</span>
+    <span class="indicator-value" id="active-style-name">NORMAL</span>
+  </div>
+
+  <!-- Top-center camera and share actions -->
+  <nav id="top-center-actions" aria-label="Globe actions">
+    <button id="clear-selected-layers" type="button" aria-label="Clear selected data layers" title="Turn off all selected data layers">
+      <span class="material-symbols-outlined" aria-hidden="true">layers_clear</span>
+    </button>
+    <button id="share-btn" type="button" aria-label="Copy share link" title="Copy share link">
+      <span class="share-icon" aria-hidden="true">&#x1F517;</span>
+    </button>
+    <button id="tilt-map-view" type="button" aria-label="Tilt map to oblique view" aria-pressed="false" title="Toggle straight-down and tilted map views">
+      <span class="material-symbols-outlined" aria-hidden="true">view_in_ar</span>
+    </button>
+    <button id="north-up-view" type="button" aria-label="Reset map to north up" title="Reset map bearing to north">
+      <span class="camera-compass-n" aria-hidden="true">N</span>
+      <span class="camera-compass-needle material-symbols-outlined" aria-hidden="true">navigation</span>
+    </button>
+    <button id="reset-globe-view" type="button" aria-label="Reset to full globe view" title="Reset camera and return to full globe view">
+      <span class="material-symbols-outlined" aria-hidden="true">public</span>
+    </button>
+  </nav>
+  <div id="global-loading-status" role="status" aria-live="polite" aria-atomic="true" hidden>
+    <span id="global-loading-label">LOADING LIVE DATA</span>
+    <span id="global-loading-detail"></span>
+  </div>
+  <div id="traffic-sync-chip" aria-live="polite">
+    <span id="traffic-sync-label">syncing road network</span>
+    <span id="traffic-sync-progress">0%</span>
+  </div>
+  
+
+  <!-- Toast notification -->
+  <div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Safe frame guides for recording composition -->
+  <div id="safe-frame-overlay">
+    <div id="safe-frame-box"></div>
+  </div>
+
+  <!-- FIRE DETECTION REPORT -->
+  <style>
+    #fire-report-panel {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      width: 320px;
+      background: rgba(10, 10, 15, 0.85);
+      border: 1px solid #ff6600;
+      border-radius: 6px;
+      color: #ccc;
+      font-family: monospace;
+      padding: 12px;
+      z-index: 1000;
+      display: none;
+      backdrop-filter: blur(4px);
+    }
+    #fire-report-panel.visible {
+      display: block;
+    }
+    .fire-report-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #443322;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+      color: #ff8833;
+      font-weight: bold;
+    }
+    .fire-report-close {
+      cursor: pointer;
+      color: #ff8833;
+      background: none;
+      border: none;
+      font-size: 16px;
+    }
+    .fire-report-row {
+      display: flex;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+    .fire-report-label {
+      width: 100px;
+      color: #888;
+    }
+    .fire-report-value {
+      flex: 1;
+      color: #ffaa55;
+    }
+  </style>
+
+  <div id="fire-report-panel">
+    <div class="fire-report-header">
+      <span>&#128293; FIRE DETECTION REPORT</span>
+      <button class="fire-report-close" onclick="document.getElementById('fire-report-panel').classList.remove('visible')">&times;</button>
+    </div>
+    <div class="fire-report-row"><div class="fire-report-label">Coords</div><div class="fire-report-value" id="fr-coords"></div></div>
+    <div class="fire-report-row"><div class="fire-report-label">Label</div><div class="fire-report-value" id="fr-label"></div></div>
+    <div class="fire-report-row"><div class="fire-report-label">FRP</div><div class="fire-report-value" id="fr-frp"></div></div>
+    <div class="fire-report-row"><div class="fire-report-label">Brightness</div><div class="fire-report-value" id="fr-bright"></div></div>
+    <div class="fire-report-row"><div class="fire-report-label">Confidence</div><div class="fire-report-value" id="fr-conf"></div></div>
+    <div class="fire-report-row"><div class="fire-report-label">Satellite</div><div class="fire-report-value" id="fr-sat"></div></div>
+  </div>
+
+  <script>
+    window.addEventListener('fire-selected', (e) => {
+      const panel = document.getElementById('fire-report-panel');
+      const fire = e.detail;
+      if (!fire) {
+        panel.classList.remove('visible');
+        return;
+      }
+      
+      let label = 'Wildfire / Biomass';
+      if (fire.ml_class === 'persistent') label = 'Persistent Thermal Source (Industry)';
+      else if (fire.ml_class === 'blast') label = 'Industrial Fire / Hazard (BLAST)';
+      else if (fire.ml_class === 'flare') label = 'Industrial Flare';
+      else if (fire.ml_class === 'agri') label = 'Agricultural Fire';
+
+      document.getElementById('fr-coords').innerText = fire.lat.toFixed(5) + ' N, ' + fire.lon.toFixed(5) + ' E';
+      document.getElementById('fr-label').innerText = label;
+      document.getElementById('fr-frp').innerText = fire.frp + ' MW';
+      document.getElementById('fr-bright').innerText = fire.brightness + ' K';
+      document.getElementById('fr-conf').innerText = Math.round(fire.confidence * 100) + '%';
+      document.getElementById('fr-sat').innerText = fire.satellite || fire.sensor || 'N/A';
+      
+      panel.classList.add('visible');
+    });
+  </script>
