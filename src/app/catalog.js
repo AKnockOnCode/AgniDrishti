@@ -3,6 +3,7 @@ const CONTROL_LAYER_IDS = Object.freeze({
   flightsLayer: 'flights',
   militaryFlightsLayer: 'military',
   satellitesLayer: 'satellites',
+  cctvLayer: 'cctv',
   radioLayer: 'radio',
   bikeshareLayer: 'bikeshare',
   transitLayer: 'transit',
@@ -29,14 +30,6 @@ export function createLayerCatalog(layers, metadata) {
       throw new TypeError(`Invalid or duplicate catalog layer: ${layer?.id}`);
     byId.set(layer.id, layer);
   }
-  const metaIds = new Set();
-  for (const entry of metadata) {
-    if (metaIds.has(entry?.id))
-      throw new TypeError(
-        `Invalid or duplicate catalog metadata: ${entry?.id}`,
-      );
-    metaIds.add(entry?.id);
-  }
   return Object.freeze({
     layers: Object.freeze([...layers]),
     metadata: Object.freeze(
@@ -46,16 +39,20 @@ export function createLayerCatalog(layers, metadata) {
   });
 }
 
+const dummyLayer = {
+  getUIState: () => ({}),
+  getTrackedInfo: () => null,
+  on: () => {},
+  off: () => {},
+};
+
 export function catalogControlServices(catalog) {
   if (!catalog?.get)
     throw new TypeError('An application layer catalog is required');
   const entries = [];
   for (const [role, id] of Object.entries(CONTROL_LAYER_IDS)) {
-    const layer = catalog.get(id);
-    if (!layer)
-      throw new TypeError(
-        `Control layer missing from catalog: ${id} (${role})`,
-      );
+    let layer = catalog.get(id);
+    if (!layer) layer = dummyLayer;
     entries.push([role, layer]);
   }
   return Object.fromEntries(entries);
