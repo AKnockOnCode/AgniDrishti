@@ -9,6 +9,7 @@ import { militaryInstallationsProxy } from './military-installations.js';
 import { regionalBriefProxy } from './regional/briefing.js';
 import { geocodeProxy } from './regional/place.js';
 import { weatherEffectsProxy } from './regional/weather-effects.js';
+import { cctvProxy } from './cctv.js';
 import { defaultSourceRoot } from './common/source-root.js';
 import { radioBrowserProxy } from './radio.js';
 import { gbfsProxy } from './gbfs.js';
@@ -38,6 +39,7 @@ function localProviderPlugins() {
     regionalBriefProxy(),
     geocodeProxy(),
     weatherEffectsProxy(),
+    cctvProxy({ sourceRoot: defaultSourceRoot }),
     radioBrowserProxy(),
     gbfsProxy(),
     transitProxy(),
@@ -55,6 +57,10 @@ function localProviderPlugins() {
 
 export { localProviderPlugins };
 
+export {
+  CCTV_FRAME_FETCH_TIMEOUT_MS,
+  fetchCctvImageFromUpstream,
+} from './cctv.js';
 export {
   createRadioProxyMiddleware,
   isPublicRadioAddress,

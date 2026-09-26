@@ -96,10 +96,6 @@ The 6-month NASA FIRMS archive contains **~800,000 fire detections** across Indi
 
 ---
 
-Nineteen layers and map sources. **Seventeen have a keyless path.**
-
-**Sits on the real ground.** Entity heights are aligned to work with Google 3D tiles, so aircraft park on aprons and cameras stand on street corners instead of floating.
-
 ## 🗺️ Features
 
 - **Live 3D Globe** — CesiumJS-powered photorealistic Earth with terrain

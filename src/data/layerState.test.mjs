@@ -38,10 +38,10 @@ function paramsForLayer(id) {
   }
   if (id === 'satellites')
     return { catalog: 'core', showPoints: false, showOrbits: false };
-  if (id === 'wind') {
+  if (id === 'cctv') {
     return {
-      overlay: 'on',
-      model: 'gfs',
+      coverageMode: 'on',
+      showProjection: true,
       autoHop: false,
       autoHopSec: 22,
       selectedCameraId: 'secret-camera',
@@ -258,27 +258,27 @@ test('v2 codec distinguishes absent from empty and keeps canonical deterministic
 
   const empty = decodeLayerStateParams(new URLSearchParams('v=2&l='));
   assert.deepEqual(empty.enabledLayerIds, []);
-  assert.deepEqual(empty.options.wind, {
-    overlay: 'on',
-    model: 'gfs',
+  assert.deepEqual(empty.options.cctv, {
+    coverageMode: 'on',
+    showProjection: true,
     autoHop: false,
   });
 
   const first = normalizeLayerState({
-    enabledLayerIds: ['traffic', 'wind', 'earthquakes', 'wind'],
+    enabledLayerIds: ['traffic', 'cctv', 'earthquakes', 'cctv'],
     options: {
       radio: { volume: 0.37, filter: 'news' },
-      wind: { paused: true, overlay: 'temperature', model: 'ifs' },
+      cctv: { autoHop: true, coverageMode: 'viewshed', showProjection: false },
       flights: { models3dMode: 'all', models3d: true },
       satellites: { catalog: 'dense' },
     },
   });
   const second = normalizeLayerState({
-    enabledLayerIds: ['earthquakes', 'wind', 'traffic'],
+    enabledLayerIds: ['earthquakes', 'cctv', 'traffic'],
     options: {
       satellites: { catalog: 'dense' },
       flights: { models3d: true, models3dMode: 'all' },
-      wind: { model: 'ifs', overlay: 'temperature', paused: true },
+      cctv: { showProjection: false, coverageMode: 'viewshed', autoHop: true },
       radio: { filter: 'news', volume: 0.37 },
     },
   });
@@ -315,10 +315,10 @@ test('unknown and forbidden option fields are ignored while missing options use 
       'v=2&l=c.e&lo=c.c.v_c.z.1_z.c.1_f.e.1_f.m.a_r.f.n_r.v.35',
     ),
   );
-  assert.deepEqual(decoded.enabledLayerIds, ['wind', 'earthquakes']);
-  assert.deepEqual(decoded.options.wind, {
-    overlay: 'temperature',
-    model: 'gfs',
+  assert.deepEqual(decoded.enabledLayerIds, ['cctv', 'earthquakes']);
+  assert.deepEqual(decoded.options.cctv, {
+    coverageMode: 'viewshed',
+    showProjection: true,
     autoHop: false,
   });
   assert.deepEqual(decoded.options.flights, {
@@ -330,10 +330,10 @@ test('unknown and forbidden option fields are ignored while missing options use 
   assert.deepEqual(decoded.options.radio, { filter: 'news', volume: 0.35 });
 
   const raw = normalizeLayerState({
-    enabledLayerIds: ['wind', 'unknown-layer'],
+    enabledLayerIds: ['cctv', 'unknown-layer'],
     options: {
-      wind: {
-        overlay: 'off',
+      cctv: {
+        coverageMode: 'off',
         selectedCameraId: 'private-camera',
         calibrationMode: true,
         calibration: { secret: 'do-not-share' },
@@ -862,10 +862,10 @@ test('stored state is deterministic, rejects other versions, and stays within a 
   state.enabledLayerIds = [...REGISTERED_LAYER_IDS].reverse();
   state.options.flights = { models3d: true, models3dMode: 'all' };
   state.options.satellites = { catalog: 'dense' };
-  state.options.wind = {
-    overlay: 'temperature',
-    model: 'ifs',
-    paused: true,
+  state.options.cctv = {
+    coverageMode: 'viewshed',
+    showProjection: false,
+    autoHop: true,
   };
   state.options.radio = { filter: 'genre:experimental-ambient', volume: 1 };
   const stored = serializeStoredLayerState(state);
@@ -1000,30 +1000,30 @@ test('share payload wins over local, passive restore writes nothing, and explici
   ]);
 
   manager.setLayerParams(
-    'wind',
+    'cctv',
     { selectedCameraId: 'private-camera' },
     { origin: 'user' },
   );
   assert.equal(storage.writes.length, 2);
-  assert.deepEqual(coordinator.getDurableState().options.wind, {
-    overlay: 'on',
-    model: 'gfs',
+  assert.deepEqual(coordinator.getDurableState().options.cctv, {
+    coverageMode: 'on',
+    showProjection: true,
     autoHop: false,
   });
 
-  manager.setLayerParams('wind', { overlay: 'off' }, { origin: 'scene' });
+  manager.setLayerParams('cctv', { coverageMode: 'off' }, { origin: 'scene' });
   assert.equal(storage.writes.length, 2);
-  assert.equal(coordinator.getDurableState().options.wind.overlay, 'on');
+  assert.equal(coordinator.getDurableState().options.cctv.coverageMode, 'on');
 
   manager.setLayerParams(
-    'wind',
-    { overlay: 'temperature' },
+    'cctv',
+    { coverageMode: 'viewshed' },
     { origin: 'voice' },
   );
   assert.equal(storage.writes.length, 3);
   assert.equal(
-    coordinator.getDurableState().options.wind.overlay,
-    'temperature',
+    coordinator.getDurableState().options.cctv.coverageMode,
+    'viewshed',
   );
   coordinator.destroy();
 });
@@ -1074,21 +1074,21 @@ test('historical share payload suppresses unrelated local layer preferences', as
 
 test('one layer failure is isolated from sibling restoration', async () => {
   const manager = productionManager({
-    wind: {
+    cctv: {
       init: () => {
         throw new Error('missing key');
       },
     },
   });
   const state = createDefaultLayerState();
-  state.enabledLayerIds = ['wind', 'earthquakes'];
+  state.enabledLayerIds = ['cctv', 'earthquakes'];
   const coordinator = new LayerStateCoordinator(manager, shareSink(), {
     storage: memoryStorage(),
   });
   const results = await coordinator.start({ shareLayerState: state });
-  assert.equal(manager.isEnabled('wind'), false);
+  assert.equal(manager.isEnabled('cctv'), false);
   assert.equal(manager.isEnabled('earthquakes'), true);
-  const failed = results.find((result) => result.layerId === 'wind');
+  const failed = results.find((result) => result.layerId === 'cctv');
   assert.equal(failed.succeeded, false);
   assert.equal(failed.phase, 'init');
   assert.equal(failed.errorClass, 'Error');

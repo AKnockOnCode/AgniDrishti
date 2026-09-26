@@ -78,7 +78,11 @@ test('unknown-only v2 layer tokens are invalid, while historical l fields stay i
   }
 });
 
-
+test('Nepal locator token is valid in v2 share links', () => {
+  const parsed = makeManager('#v=2&lat=10&lon=20&l=z').parseInitialHash();
+  assert.deepEqual(parsed.layerState.enabledLayerIds, ['bhote-koshi-locator']);
+  assert.equal(parsed.layerStateInvalid, false);
+});
 
 test('share-link serialization emits the current celestial state', () => {
   const manager = makeManager();
@@ -93,9 +97,36 @@ test('share-link serialization emits the current celestial state', () => {
   assert.equal(new URLSearchParams(window.location.hash.slice(1)).get('cr'), '1');
 });
 
+test('generated links are v2 and include deterministic layers, options, style params, and panels', () => {
+  const manager = makeManager();
+  const layers = createDefaultLayerState();
+  layers.enabledLayerIds = ['cctv', 'radio'];
+  layers.options.cctv = { coverageMode: 'viewshed', showProjection: false, autoHop: true };
+  layers.options.radio = { filter: 'news', volume: 0.45 };
+  manager.setLayerStateProvider(() => layers);
+  manager.setPanelStateProvider(() => ({ specs: [
+    { id: 'control-panel', collapsed: false, pinned: true },
+    { id: 'param-slider-panel', collapsed: true },
+  ] }));
+  manager.setStyleParamStateProvider(() => ({
+    sensitivity: 0.82, bloom: 0.37, mode: 1, pixelation: 2.6, palette: 1,
+  }));
+  manager.onStyleChange('thermal');
+  clearTimeout(manager._debounceTimer);
+  manager._updateHash();
+  const params = new URLSearchParams(window.location.hash.slice(1));
+  assert.equal(params.get('v'), '2');
+  assert.equal(params.get('l'), 'c.r');
+  assert.equal(params.get('sp'), 's.82_b.37_m.100_p.260_a.100');
+  assert.equal(params.get('ui'), 'c.c.0_c.p.1_m.c.1');
+});
 
-
-
+test('visual parameters, explicit empty layers, and panel state are v2-only', () => {
+  const parsed = makeManager(
+    '#v=2&lat=10&lon=20&style=flir&l=&sp=s.82_b.37_p.260&ui=c.c.0_c.p.1_d.c.1_d.p.1',
+  ).parseInitialHash();
+  assert.deepEqual(parsed.layerState.enabledLayerIds, []);
+  assert.deepEqual(parsed.styleParams, { sensitivity: 0.82, bloom: 0.37, pixelation: 2.6 });
   assert.deepEqual(parsed.panelState, { specs: [
     { id: 'control-panel', collapsed: false, pinned: true },
     { id: 'data-panel', collapsed: true, pinned: null },

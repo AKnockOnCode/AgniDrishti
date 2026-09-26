@@ -1,5 +1,9 @@
 import { isExplicitLayerStateOrigin } from '../data/layerState.js';
 import {
+  registerCctvFocusRequestListener,
+  routeCctvFocusRequest,
+} from '../cctvFocusRequest.js';
+import {
   flyToWorldTarget,
   registerWorldFocusRequestListener,
   routeWorldFocusRequest,
@@ -30,6 +34,7 @@ export class LayerBindings {
     this._dataManager = null;
     this._directionsShellModule = null;
     this._weatherShellModules = [];
+    this._cctvRequestFocusHandler = null;
     this._removeCctvRequestFocusListener = null;
     this._worldRequestFocusHandler = null;
     this._removeWorldRequestFocusListener = null;
@@ -44,10 +49,24 @@ export class LayerBindings {
   get _contextControls() {
     return this.readControls()._contextControls;
   }
+  get _cctvControls() {
+    return this.readControls()._cctvControls;
+  }
   get _radioControls() {
     return this.readControls()._radioControls;
   }
   observeCamera() {
+    this._cctvRequestFocusHandler = (event) =>
+      routeCctvFocusRequest(
+        event,
+        (activate, focus) => this._runExplicitCctvFocus(activate, focus),
+        (cameraId, durationSec) =>
+          this.services.cctvLayer.focusCamera(cameraId, durationSec),
+      );
+    this._removeCctvRequestFocusListener = registerCctvFocusRequestListener(
+      window,
+      this._cctvRequestFocusHandler,
+    );
     this._worldRequestFocusHandler = (event) =>
       routeWorldFocusRequest(
         event,
@@ -213,6 +232,7 @@ export class LayerBindings {
     }
     this._updateGlobalLoadingFeedback(performance.now());
     this._syncContextModeButtons();
+    this._cctvControls.connect();
     this._radioControls.connect();
     this._connectDirectionsCamera();
     this._connectWeatherCamera();
@@ -252,6 +272,7 @@ export class LayerBindings {
 
     this._removeCctvRequestFocusListener?.();
     this._removeCctvRequestFocusListener = null;
+    this._cctvRequestFocusHandler = null;
     this._removeWorldRequestFocusListener?.();
     this._removeWorldRequestFocusListener = null;
     this._worldRequestFocusHandler = null;

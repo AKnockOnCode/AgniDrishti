@@ -2,6 +2,7 @@ import flights from '../data/flights.js';
 import military from '../data/militaryFlights.js';
 import vessels from '../data/aisLiveVessels.js';
 import { configureAlprSource } from '../data/alprCameras.js';
+import { configureCctvSource } from '../data/cctv.js';
 import { configureRadioSource } from '../data/radio.js';
 import { configureTrafficSource } from '../data/traffic.js';
 import { configureBikeshareSource } from '../data/bikeshare.js';

@@ -14,6 +14,7 @@ import { RecordingControls } from './recordingControls.js';
 import { readShellElements } from './shellElements.js';
 import { CockpitCoordinator } from './cockpitCoordinator.js';
 import { ContextControls } from './context.js';
+import { CctvControls } from './cctv.js';
 import { RadioControls } from './radio.js';
 import { LocationNavigation } from './locationNavigation.js';
 import { bindClearLayersControl } from './layers.js';
@@ -27,6 +28,7 @@ import { aircraftTrackingTarget } from '../cockpitTracking.js';
 
 import { ShellFeedback } from './shellFeedback.js';
 
+import { runCctvLayerEnableTransition } from '../cctvFocusPolicy.js';
 
 /**
  * Central UI orchestrator for the God's Eye View application.
@@ -879,6 +881,51 @@ export class StyleManager extends ShellFacade {
     return this._runExplicitNavigation('camera', () => focus(cameraId));
   }
 
+  /** Compose camera panel controls from the existing camera port and application actions. */
+  _initCctvPanel() {
+    const { cctvLayer } = this.services;
+    this._cctvControls?.destroy();
+    this._cctvControls = new CctvControls({
+      elements: {
+        _cctvAdjustBtn: this._cctvAdjustBtn,
+        _cctvAutoHopBtn: this._cctvAutoHopBtn,
+        _cctvCalReadout: this._cctvCalReadout,
+        _cctvCalibResetBtn: this._cctvCalibResetBtn,
+        _cctvCalibSaveBtn: this._cctvCalibSaveBtn,
+        _cctvCoverageBtn: this._cctvCoverageBtn,
+        _cctvEnableBtn: this._cctvEnableBtn,
+        _cctvFocusBtn: this._cctvFocusBtn,
+        _cctvFrame: this._cctvFrame,
+        _cctvFrameWrap: this._cctvFrameWrap,
+        _cctvVideo: this._cctvVideo,
+        _cctvMeta: this._cctvMeta,
+        _cctvNearestBtn: this._cctvNearestBtn,
+        _cctvNextBtn: this._cctvNextBtn,
+        _cctvPanel: this._cctvPanel,
+        _cctvPrevBtn: this._cctvPrevBtn,
+        _cctvProjectionBtn: this._cctvProjectionBtn,
+        _cctvQualityChip: this._cctvQualityChip,
+        _cctvSelect: this._cctvSelect,
+        _cctvSourceBadge: this._cctvSourceBadge,
+        _cctvSummary: this._cctvSummary,
+        _cctvSyncChip: this._cctvSyncChip,
+        _cctvSyncLabel: this._cctvSyncLabel,
+        _cctvSyncProgress: this._cctvSyncProgress,
+      },
+      cctv: cctvLayer,
+      actions: {
+        isEnabled: () => this._dataManager?.isEnabled('cctv'),
+        setParams: (params, options) =>
+          this._dataManager?.setLayerParams('cctv', params, options),
+        toggleEnabled: (...args) => this._toggleCctvEnabled(...args),
+        runExplicitFocus: (...args) => this._runExplicitCctvFocus(...args),
+        setPanelCollapsed: (...args) => this.setPanelCollapsed(...args),
+        showToast: (message) => this._showToast(message),
+        syncViewport: () => this._syncCctvPanelViewport(),
+        setSplitFlapText,
+      },
+    });
+  }
 
   /**
    * Toggles the CCTV layer enabled state. When enabling and no camera is active,

@@ -130,7 +130,7 @@
     "runtime": "node",
     "exports": ["./server/providers/firms"],
     "modules": ["server/providers/firms.js", "src/data/firmsCsv.js"],
-    "external": ["kdbush"]
+    "external": []
   },
   "gbfs-provider": {
     "runtime": "node",
