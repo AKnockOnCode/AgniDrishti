@@ -32,7 +32,9 @@ export function createLayerCatalog(layers, metadata) {
   const metaIds = new Set();
   for (const entry of metadata) {
     if (metaIds.has(entry?.id))
-      throw new TypeError(`Invalid or duplicate catalog metadata: ${entry?.id}`);
+      throw new TypeError(
+        `Invalid or duplicate catalog metadata: ${entry?.id}`,
+      );
     metaIds.add(entry?.id);
   }
   return Object.freeze({
@@ -51,7 +53,9 @@ export function catalogControlServices(catalog) {
   for (const [role, id] of Object.entries(CONTROL_LAYER_IDS)) {
     const layer = catalog.get(id);
     if (!layer)
-      throw new TypeError(`Control layer missing from catalog: ${id} (${role})`);
+      throw new TypeError(
+        `Control layer missing from catalog: ${id} (${role})`,
+      );
     entries.push([role, layer]);
   }
   return Object.fromEntries(entries);

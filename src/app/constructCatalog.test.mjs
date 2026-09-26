@@ -49,7 +49,10 @@ test('catalogs construct distinct layers and classification from their supplied 
   // AgniDrishti layers are present
   assert.ok(first.get('local-firms'), 'FIRMS fire layer is present');
   assert.ok(first.get('wind'), 'wind layer is present');
-  assert.ok(first.get('military-installations'), 'installations layer is present');
+  assert.ok(
+    first.get('military-installations'),
+    'installations layer is present',
+  );
 
   // Each catalog creates its own independent layer instances
   assert.deepEqual(
