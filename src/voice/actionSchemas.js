@@ -129,7 +129,6 @@ const schemas = [
             'satellites',
             'rocket-launches',
             'traffic',
-            'cctv',
             'radio',
             'bikeshare',
             'ais-live-vessels',
@@ -161,7 +160,6 @@ const schemas = [
             'earthquakes',
             'satellites',
             'traffic',
-            'cctv',
             'radio',
             'bikeshare',
             'ais-live-vessels',
@@ -187,7 +185,6 @@ const schemas = [
             'data-panel',
             'location-bar',
             'control-panel',
-            'cctv-panel',
             'radio-panel',
             'scene-panel',
             'pp-toggles',
@@ -403,39 +400,6 @@ const schemas = [
         },
         sceneId: {
           type: 'string',
-        },
-      },
-      required: ['action'],
-    },
-  },
-  {
-    name: 'control_cctv',
-    parameters: {
-      type: 'object',
-      additionalProperties: false,
-      properties: {
-        action: {
-          type: 'string',
-          enum: [
-            'enable',
-            'disable',
-            'select',
-            'next',
-            'prev',
-            'nearest',
-            'focus',
-            'coverage',
-            'viewshed',
-            'adjust',
-            'projection',
-            'autohop',
-          ],
-        },
-        cameraQuery: {
-          type: 'string',
-        },
-        enabled: {
-          type: 'boolean',
         },
       },
       required: ['action'],

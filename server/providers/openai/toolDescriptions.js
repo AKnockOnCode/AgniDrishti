@@ -258,24 +258,6 @@ export const ACTION_DESCRIPTIONS = {
       },
     },
   },
-  control_cctv: {
-    description:
-      'CCTV camera operations: enable/disable the layer, select a camera by name, next/prev/nearest/focus, toggle coverage wedges / projection overlay / auto-hop, "viewshed" for color-coded per-camera coverage volumes, and "adjust" for the on-camera calibration gizmo.',
-    $position: 1,
-    parameters: {
-      properties: {
-        cameraQuery: {
-          description: 'Camera name or id for select.',
-          $position: 1,
-        },
-        enabled: {
-          description:
-            'Explicit on/off for coverage/viewshed/adjust/projection/autohop; omit to toggle.',
-          $position: 1,
-        },
-      },
-    },
-  },
   control_radio: {
     description:
       'Control Internet Radio playback without moving the map. Use select whenever the request includes a station category, name, country, coordinates, or nearby place—even when the user says play. Use play only for an unqualified "turn on/start the radio" request so the current or nearest station begins. Enable only reveals the Radio layer/markers without audio. Also supports disable, resume, pause, stop, next/previous, volume, and status.',
